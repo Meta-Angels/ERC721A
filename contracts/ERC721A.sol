@@ -36,8 +36,6 @@ contract ERC721A is Context, ERC165, IERC721, IERC721Metadata, IERC721Enumerable
 
     uint256 private currentIndex = 0;
 
-    uint256 internal immutable maxBatchSize;
-
     // Token name
     string private _name;
 
@@ -57,19 +55,9 @@ contract ERC721A is Context, ERC165, IERC721, IERC721Metadata, IERC721Enumerable
     // Mapping from owner to operator approvals
     mapping(address => mapping(address => bool)) private _operatorApprovals;
 
-    /**
-     * @dev
-     * `maxBatchSize` refers to how much a minter can mint at a time.
-     */
-    constructor(
-        string memory name_,
-        string memory symbol_,
-        uint256 maxBatchSize_
-    ) {
-        require(maxBatchSize_ > 0, "ERC721A: max batch size must be nonzero");
+    constructor(string memory name_, string memory symbol_) {
         _name = name_;
         _symbol = symbol_;
-        maxBatchSize = maxBatchSize_;
     }
 
     /**
@@ -139,12 +127,7 @@ contract ERC721A is Context, ERC165, IERC721, IERC721Metadata, IERC721Enumerable
     function ownershipOf(uint256 tokenId) internal view returns (TokenOwnership memory) {
         require(_exists(tokenId), "ERC721A: owner query for nonexistent token");
 
-        uint256 lowestTokenToCheck;
-        if (tokenId >= maxBatchSize) {
-            lowestTokenToCheck = tokenId - maxBatchSize + 1;
-        }
-
-        for (uint256 curr = tokenId; curr >= lowestTokenToCheck; curr--) {
+        for (uint256 curr = tokenId; ; curr--) {
             TokenOwnership memory ownership = _ownerships[curr];
             if (ownership.addr != address(0)) {
                 return ownership;
@@ -307,7 +290,6 @@ contract ERC721A is Context, ERC165, IERC721, IERC721Metadata, IERC721Enumerable
         require(to != address(0), "ERC721A: mint to the zero address");
         // We know if the first token in the batch doesn't exist, the other ones don't as well, because of serial ordering.
         require(!_exists(startTokenId), "ERC721A: token already minted");
-        require(quantity <= maxBatchSize, "ERC721A: quantity to mint too high");
 
         _beforeTokenTransfers(address(0), to, startTokenId, quantity);
 
